@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade aberta - frameworks de geoprocessamento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script type="module" src="https://js.arcgis.com/calcite-components/1.9.2/calcite.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.9.2/calcite.css"/>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/4.28/"></script>
+</head>
+<body>
+    <style>
+        body{font-family: 'Times New Roman', Times, serif;padding: 3%;}
+        h1{padding-bottom: 20px;}
+        .row{padding-bottom: 20px;}
+        #widget1, #widget2, #widget3, #widget4, #widget5 {
+            height: 400px;
+            width: 100%;
+        }
+        #rendererDiv {
+            padding: 10px;
+            width: 280px;
+        }
+        .slider {
+            height: 40px;
+            width: 100%;
+        }
+
+        #selection {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        #widget4 {
+            position: relative;
+            z-index: 1;
+        }
+
+        #card {
+            max-width: 389px;
+        }
+
+        #city,
+        #global {
+            width: 40%;
+            max-width: 300px;
+            margin: 3px;
+        }
+
+        @media (max-width: 600px) {
+            .esri-ui-top-right.esri-ui-corner {
+                display: none !important;
+            }
+        }
+        
+    </style>
+    <main>
+        <h1>Atividade aberta - frameworks de geoprocessamento</h1>
+        <section class="row">
+            <div class="row">
+                <h2>1) Google Sheets:</h2>
+                <iframe width="210" height="430" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhlClFSsQ_sLYzUfBsWe4p-J2ho9El8_6afVhTSAz94csytqK0M31oSbmNBr1lKcO3b7UVwN-HYD/pubhtml?gid=553638298&amp;single=true&amp;widget=true&amp;headers=false"></iframe>
+            </div>
+                <div class="col-md-12 col-lg-6">
+                <h2>2) Google MyMaps:</h2>
+                <iframe width="100%" height="400" src="https://www.google.com/maps/d/u/0/embed?mid=1BxNaqeaAAiM70RTQpr2d2DaRy9GzyZ0&noprof=1"></iframe>
+            </div>
+            <div class="col-md-12 col-lg-6">
+                <h2>3) ArcGis:</h2>
+                <iframe width="100%" height="400" src="//www.arcgis.com/apps/Embed/index.html?webmap=42592a44627440df81407dab722dff81&extent=-41.6182,23.738,55.413,61.4875&zoom=true&previewImage=false&scale=true&disable_scroll=true&theme=light"></iframe>
+            </div>
+        </section>    
+        <h2>Widgets</h2>
+        <section class="row">
+            <div class="col-md-12 col-lg-6">
+                <script>
+                    require([
+                        "esri/Map",
+                        "esri/views/SceneView",
+                        "esri/layers/SceneLayer",
+                        "esri/widgets/Daylight",
+                        "esri/widgets/Expand"
+                    ], (Map, SceneView, SceneLayer, Daylight, Expand) => {
+                        // General camera settings
+                        const camera = {
+                        city: {
+                            position: {
+                            //31.166666 -3.9833294
+                            longitude: -3.9833294,
+                            latitude: 31.166666,
+                            z: 110
+                            },
+                            heading: 250.18,
+                            tilt: 87.91
+                        },
+                        global: {
+                            position: {
+                            longitude: 27.05453608,
+                            latitude: 54.53236102,
+                            z: 10825172.372
+                            },
+                            heading: 357.3,
+                            tilt: 0.19
+                        }
+                        };
+
+                        /***********************************
+                         * Create the SceneView
+                         ***********************************/
+                        // Make a new map and load a scene layer
+                        const map = new Map({
+                        basemap: "satellite",
+                        ground: "world-elevation",
+                        layers: [
+                            new SceneLayer({
+                            popupEnabled: false,
+                            portalItem: {
+                                id: "b343e14455fe45b98a2c20ebbceec0b0"
+                            }
+                            })
+                        ]
+                        });
+
+                        const view = new SceneView({
+                        map: map,
+                        container: "widget4",
+
+                        // position in Brest, France
+                        camera: camera.city,
+                        qualityProfile: "high",
+                        environment: {
+                            lighting: {
+                            // autocasts as new SunLighting()
+                            type: "sun",
+                            date: new Date("December 21, 2021 09:40:00 UTC"),
+
+                            directShadowsEnabled: true
+                            }
+                        }
+                        });
+
+                        /**************************************
+                         * Initialize the daylight widget
+                         **************************************/
+
+                        const daylight = new Daylight({
+                        view: view,
+                        // plays the animation twice as fast than the default one
+                        playSpeedMultiplier: 2,
+                        // disable the timezone selection button
+                        visibleElements: {
+                            timezone: false
+                        }
+                        });
+
+                        // Add widget inside an Expand widget to be able to hide it on devices with small screens
+                        view.ui.add(
+                        new Expand({ content: daylight, view: view, expanded: true }),
+                        "top-right"
+                        );
+
+                        /***********************************
+                         * Add functionality to change between city and global scale
+                         ***********************************/
+                        const buttonCity = document.getElementById("city");
+                        const buttonGlobal = document.getElementById("global");
+
+                        buttonCity.addEventListener("click", (event) => {
+                        // Change the viewpoint
+                        view.camera = camera.city;
+                        // Use the sun position on a set date and time to illuminate the scene
+                        daylight.viewModel.sunLightingEnabled = true;
+                        // Styling of the buttons
+                        buttonCity.appearance = "solid";
+                        buttonGlobal.appearance = "outline-fill";
+                        });
+
+                        buttonGlobal.addEventListener("click", (event) => {
+                        // Change the viewpoint
+                        view.camera = camera.global;
+                        // Ignore the sun position and use virtual lighting to illuminate the scene
+                        daylight.viewModel.sunLightingEnabled = false;
+                        // Styling of the buttons
+                        buttonCity.appearance = "outline-fill";
+                        buttonGlobal.appearance = "solid";
+                        });
+
+                        /***********************************
+                         * Add a prompt text before the daylight widget
+                         ***********************************/
+                        const toggleLightingPrompt = document.createElement("calcite-card");
+                        toggleLightingPrompt.id = "card";
+                        toggleLightingPrompt.textContent =
+                        "Use the sun position checkbox to illuminate the scene either by date and time or relative to camera.";
+                        view.ui.add({
+                        component: toggleLightingPrompt,
+                        position: "top-right",
+                        index: 0
+                        });
+                    });
+                </script>
+                <h3>1) Daylight Widget:</h3>
+                <div id="widget4">
+                    <div id="selection">
+                      <calcite-button id="city" appearance="solid">City scale</calcite-button>
+                      <calcite-button id="global" appearance="outline-fill">Global scale</calcite-button>
+                    </div>
+                  </div>
+            </div>
+            
+            <div class="col-md-12 col-lg-6">
+                <script>
+                    require(["esri/Map", "esri/Basemap", "esri/views/SceneView", "esri/widgets/BasemapGallery"],
+                    (
+                      Map,
+                      Basemap,
+                      SceneView,
+                      BasemapGallery
+                    ) => {
+                      const map = new Map({
+                        basemap: new Basemap({
+                          portalItem: {
+                            id: "0560e29930dc4d5ebeb58c635c0909c9" // References the 3D Topographic Basemap
+                          }
+                        })
+                      });
+              
+                      const view = new SceneView({
+                        container: "widget2",
+                        map: map,
+                        camera: {
+                        position: {
+                        longitude: 23.72388870,
+                        latitude: 37.97111111,
+                        z: 205
+                        },
+                        heading: 85.52,
+                        tilt: 48.94
+                    } // Parthenon, Athens
+                      });
+              
+                      const basemapGallery = new BasemapGallery({
+                        view: view
+                      });
+              
+                      // Add the widget to the top-right corner of the view
+                      view.ui.add(basemapGallery, {
+                        position: "top-right"
+                      });
+                    });
+                </script>
+                <h3>2) BasemapGallery Widget:</h3>
+                <div id="widget2"></div>
+            </div>
+        </section>
+
+        <section class="row">
+            <div class="col-md-12 col-lg-6">
+                <script>
+                    require([
+                      "esri/Map",
+                      "esri/views/MapView",
+                      "esri/layers/ImageryTileLayer",
+                      "esri/renderers/RasterShadedReliefRenderer",
+                      "esri/widgets/Slider",
+                      "esri/widgets/Expand",
+                      "esri/rest/support/MultipartColorRamp"
+                    ], (
+                      Map,
+                      MapView,
+                      ImageryTileLayer,
+                      RasterShadedReliefRenderer,
+                      Slider,
+                      Expand,
+                      MultipartColorRamp
+                    ) => {
+                      // set the hillshade type for the shaded relief renderer
+                      let hillshadeType = "traditional";
+                      const url =
+                        "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer";
+              
+                      // create a colorRamp
+                      const colorRamp = MultipartColorRamp.fromJSON({
+                        type: "multipart",
+                        colorRamps: [
+                          {
+                            fromColor: [175, 240, 233],
+                            toColor: [255, 255, 179]
+                          },
+                          {
+                            fromColor: [255, 255, 179],
+                            toColor: [0, 128, 64]
+                          },
+                          {
+                            fromColor: [0, 128, 64],
+                            toColor: [252, 186, 3]
+                          },
+                          {
+                            fromColor: [252, 186, 3],
+                            toColor: [128, 0, 0]
+                          },
+                          {
+                            fromColor: [120, 0, 0],
+                            toColor: [105, 48, 13]
+                          },
+                          {
+                            fromColor: [105, 48, 13],
+                            toColor: [171, 171, 171]
+                          },
+                          {
+                            fromColor: [171, 171, 171],
+                            toColor: [255, 252, 255]
+                          }
+                        ]
+                      });
+              
+                      // set the shaded relief renderer parameters
+                      const renderer = new RasterShadedReliefRenderer({
+                        altitude: 45,
+                        azimuth: 315,
+                        hillshadeType: hillshadeType,
+                        zFactor: 1,
+                        scalingType: "adjusted",
+                        colorRamp: colorRamp
+                      });
+              
+                      const layer = new ImageryTileLayer({
+                        url: url,
+                        renderer: renderer
+                      });
+              
+                      const map = new Map({
+                        basemap: "gray-vector",
+                        layers: [layer]
+                      });
+              
+                      const view = new MapView({
+                        container: "widget3",
+                        map: map,
+                        zoom: 3,
+                        center: [18, 40]
+                      });
+              
+                      const expand = new Expand({
+                        view: view,
+                        content: document.getElementById("rendererDiv"),
+                        expanded: true,
+                        expandIcon: "configure"
+                      });
+              
+                      view.ui.add(expand, "top-right");
+              
+                      // this function will be called as user adjusts
+                      // the renderer parameters via UI
+                      function updateRenderer() {
+                        const renderer = layer.renderer.clone();
+                        const bandStat = layer.rasterInfo.statistics[0];
+                        renderer.hillshadeType = hillshadeType;
+                        switch (hillshadeType) {
+                          case "traditional":
+                            renderer.zFactor = zFactorSlider.values[0];
+                            renderer.altitude = altitudeSlider.values[0];
+                            renderer.azimuth = azimuthSlider.values[0];
+                            break;
+                          case "multi-directional":
+                            renderer.zFactor = zFactorSlider.values[0];
+                            break;
+                        }
+                        layer.renderer = renderer;
+                      }
+              
+                      // listen to hillshade dropdown change event and update the renderer
+                      // to reflect the hillshade type.
+                      const hillshadeTypeSelect = document.getElementById("hillshadeType");
+                      hillshadeTypeSelect.addEventListener("change", () => {
+                        if (!layer.loaded) {
+                          return;
+                        }
+                        hillshadeType = hillshadeTypeSelect.value;
+                        changeHillshadeType(hillshadeType);
+                      });
+              
+                      function changeHillshadeType(hillshadeType) {
+                        switch (hillshadeType) {
+                          case "traditional":
+                            document.getElementById("traditionalStuff").style = "";
+                            break;
+                          case "multi-directional":
+                            document.getElementById("traditionalStuff").style =
+                              "display: none;";
+                            break;
+                        }
+                        updateRenderer();
+                      }
+              
+                      // listen to z factor slider's thumb change and drag events
+                      const zFactorLabel = document.getElementById("zFactorLabel");
+                      const zFactorSlider = new Slider({
+                        container: "zFactor-slider",
+                        min: 1,
+                        max: 10,
+                        values: [1],
+                        steps: 1,
+                        snapOnClickEnabled: false,
+                        visibleElements: {
+                          labels: true,
+                          rangeLabels: true
+                        }
+                      });
+                      zFactorSlider.on(["thumb-change", "thumb-drag"], updateRenderer);
+              
+                      // listen to altitude slider's thumb change and drag events
+                      const altitudeSlider = new Slider({
+                        container: "altitude-slider",
+                        min: 0,
+                        max: 90,
+                        values: [45],
+                        steps: 1,
+                        snapOnClickEnabled: false,
+                        visibleElements: {
+                          labels: true,
+                          rangeLabels: true
+                        }
+                      });
+                      altitudeSlider.on(["thumb-change", "thumb-drag"], updateRenderer);
+              
+                      // listen to altitude slider's thumb change and drag events
+                      const azimuthSlider = new Slider({
+                        container: "azimuth-slider",
+                        min: 0,
+                        max: 360,
+                        values: [315],
+                        steps: 5,
+                        snapOnClickEnabled: false,
+                        visibleElements: {
+                          labels: true,
+                          rangeLabels: true
+                        }
+                      });
+                      azimuthSlider.on(["thumb-change", "thumb-drag"], updateRenderer);
+              
+                      // make the renderer grayscale or use the colorramp
+                      const colorRampCheckBox = document.getElementById("tinted");
+                      colorRampCheckBox.addEventListener("click", (val) => {
+                        if (!layer.loaded) {
+                          return;
+                        }
+                        const renderer = layer.renderer.clone();
+                        renderer.colorRamp = colorRampCheckBox.checked ? colorRamp : null;
+                        layer.renderer = renderer;
+                      });
+              
+                      // adjust the scalingType for the renderer
+                      const adjustBox = document.getElementById("adjust");
+                      adjustBox.addEventListener("click", (val) => {
+                        if (!layer.loaded) {
+                          return;
+                        }
+                        const renderer = layer.renderer.clone();
+                        renderer.scalingType = adjustBox.checked ? "adjusted" : "none";
+                        layer.renderer = renderer;
+                      });
+                    });
+                </script>
+                <h3>3) ImageryTileLayer Widget:</h3>
+                <div id="widget3"></div>
+                <div id="rendererDiv" class="esri-widget">
+                    <h3 class="esri-widget__heading">Shaded Relief Parameters</h3>
+                    <label class="esri-feature-form__label">Select type</label>
+                    <select id="hillshadeType" class="esri-input esri-select">
+                      <option value="traditional" selected>traditional</option>
+                      <option value="multi-directional">multi-directional</option>
+                    </select>
+                    <br/>
+                    <label id="zFactorLabel" class="esri-feature-form__label">Exaggeration Factor:</label>
+                    <div id="zFactor-slider" class="slider"></div>
+                    <div id="traditionalStuff">
+                      <label id="altitudeLabel" class="esri-feature-form__label">Sun Altitude:</label>
+                      <div id="altitude-slider" class="slider"></div>
+                      <label id="azimuthLabel" class="esri-feature-form__label">Sun Azimuth:</label>
+                      <div id="azimuth-slider" class="slider"></div>
+                    </div>
+                    <input type="checkbox" id="tinted" checked="true"/><label>Tinted hillshade</label>
+                    <br/>
+                    <input type="checkbox" id="adjust" checked="true"/><label>Adjust for large scale</label>
+                </div>
+            </div>
+            
+            <div class="col-md-12 col-lg-6">
+                <script>
+                    require([
+                      "esri/Map",
+                      "esri/views/MapView",
+                      "esri/widgets/Directions",
+                      "esri/layers/RouteLayer"
+                    ], function (Map, MapView, Directions, RouteLayer) {
+                      // An authorization string used to access the basemap, geocoding and routing services
+              
+                      // create a new RouteLayer, required for Directions widget
+              
+                      // new RouteLayer must be added to the map
+                      const map = new Map({
+                        basemap: "topo-vector",
+                      });
+              
+                      const view = new MapView({
+                        zoom: 14,
+                        //41.902782, 12.496366
+                        center: [12.496366, 41.902782],
+                        container: "widget5",
+                        map: map
+                      });
+              
+                      // new RouteLayer must be added to Directions widget
+                      
+              
+                      // Add the Directions widget to the top right corner of the view
+                      view.ui.add(directionsWidget, {
+                        position: "top-right"
+                      });
+                    });
+                  </script>
+                <h3>4) Directions Widget:</h3>
+                <div id="widget5"></div>
+            </div>
+            
+        </section>
+
+        <section class="row">
+
+            <div class="col-md-12 col-lg-6">
+                <script>
+                    require([
+                    "esri/Map",
+                    "esri/views/MapView",
+                    "esri/portal/Portal",
+                    "esri/widgets/BasemapGallery",
+                    "esri/widgets/BasemapGallery/support/PortalBasemapsSource",
+                    "esri/widgets/Expand",
+                    "esri/core/reactiveUtils"
+                    ], function(
+                        Map,
+                        MapView,
+                        Portal,
+                        BasemapGallery,
+                        PortalBasemapsSource,
+                        Expand,
+                        reactiveUtils
+                    ) {
+            
+                        const portal = new Portal();
+                
+                        // source for basemaps from a portal group
+                        // containing basemaps with different projections
+                        const source = new PortalBasemapsSource({
+                        portal,
+                        query: {
+                            id: "bdb9d65e0b5c480c8dcc6916e7f4e099"
+                        }
+                        });
+                
+                
+                        const map = new Map({
+                        basemap: {
+                            portalItem: {
+                            id: "8d91bd39e873417ea21673e0fee87604" // nova basemap
+                            }
+                        }
+                        });
+                
+                        // center the view over 48 states
+                        const view = new MapView({
+                        container: "widget1",
+                        map: map,
+                        center: [10, 40],
+                        zoom: 3,
+                        constraints: {
+                            snapToZoom: false
+                        }
+                        });
+                        view.ui.add("srDiv", "top-right");
+                
+                        const bgExpand = new Expand({
+                        view,
+                        content: new BasemapGallery({ source, view }),
+                        expandIcon: "basemap"
+                        });
+                        view.ui.add(bgExpand, "top-right");
+                
+                        reactiveUtils.watch(() => view.spatialReference, (spatialReference)=> {
+                        document.getElementById("srDiv").innerHTML = `view.spatialReference.wkid = <b>${spatialReference.wkid}</b>`;
+                        });
+
+                    });
+                </script>
+                <h3>5) Basemaps with different projections:</h3>
+                <div id="widget1"></div>
+                <div id="srDiv" class="esri-widget"></div>
+            </div>
+
+        </section>
+
+    </main>
+</body>
+</html>
